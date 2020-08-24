@@ -1,14 +1,9 @@
-﻿using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using UnityEditor.ShaderGraph.Internal;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.Rendering;
 
 [RequireComponent(typeof(NavMeshAgent))]
 public class Bot : MonoBehaviour
 {
-    
     private NavMeshAgent m_Agent;
     public Transform m_Target;
 
@@ -24,36 +19,30 @@ public class Bot : MonoBehaviour
     public float m_HidingOffset = 3.0f;
     private GameObject[] m_HidingSpots;
 
-    [Header("Stamina")]
-    public float m_Stamina = 100.0f;
-    public float m_DecreaseStaminaPerTime = 5.0f;
-    private float m_RecoverTime = 1.0f;
+    [Header("Path Follow")]
+    public Path m_Path;
 
     private void Start()
     {
         m_Agent = GetComponent<NavMeshAgent>();
         m_HidingSpots = GameObject.FindGameObjectsWithTag("HidingSpot");
-        InvokeRepeating("Recover", m_RecoverTime, m_RecoverTime);
     }
 
-    private void Recover()
+    private void PathFollow()
     {
-        m_Stamina = Mathf.Clamp(++m_Stamina, 0, 100);
+        var node = m_Path.GetNode();
+        Seek(node);
+
+        var radius = m_Path.GetRadius();
+        if (Vector3.Distance(transform.position, node) < radius)
+        {
+            m_Path.NextNode();
+        }
     }
 
-    private void Update()
+    public void Update()
     {
-        if (m_Stamina < 5.0f)
-            Hide();
-        else if (m_Stamina < 40.0f)
-            Flee(m_Target.position);
-        else
-            Seek(m_Target.position);
-
-        //Hide();
-        //Seek(m_Target.position);
-        //Flee(m_Target.position);
-        //Wander();
+        PathFollow();
     }
 
     private void Hide()
@@ -79,23 +68,17 @@ public class Bot : MonoBehaviour
 
     private void Seek(Vector3 position)
     {
-        m_Stamina -= m_DecreaseStaminaPerTime * Time.deltaTime;
-
         m_Agent.SetDestination(position);    
     }
 
     private void Flee(Vector3 position)
     {
-        m_Stamina -= m_DecreaseStaminaPerTime * Time.deltaTime;
-
         var fleeVector = position - transform.position;
         m_Agent.SetDestination(transform.position - fleeVector);
     }
 
     private void Wander()
     {
-        m_Stamina -= m_DecreaseStaminaPerTime * Time.deltaTime;
-
         m_WanderTarget += new Vector3(WanderRandom, 0.0f, WanderRandom);
 
         m_WanderTarget.Normalize();
