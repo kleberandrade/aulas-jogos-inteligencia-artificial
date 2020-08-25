@@ -4,7 +4,7 @@ using UnityEngine.AI;
 [RequireComponent(typeof(NavMeshAgent))]
 public class Bot : MonoBehaviour
 {
-    private NavMeshAgent m_Agent;
+    
     public Transform m_Target;
 
     [Header("Wander")]
@@ -22,9 +22,26 @@ public class Bot : MonoBehaviour
     [Header("Path Follow")]
     public Path m_Path;
 
-    private void Start()
+    private NavMeshAgent m_Agent;
+    private Animator m_Animator;
+
+    private void Awake()
     {
         m_Agent = GetComponent<NavMeshAgent>();
+        m_Animator = GetComponent<Animator>();
+        m_Animator.SetFloat("Speed", 10);
+    }
+
+    public void Update()
+    {
+        float speed = m_Agent.velocity.magnitude;
+        m_Animator.SetFloat("Speed", speed);
+
+        PathFollow();
+    }
+
+    private void Start()
+    {
         m_HidingSpots = GameObject.FindGameObjectsWithTag("HidingSpot");
     }
 
@@ -40,10 +57,7 @@ public class Bot : MonoBehaviour
         }
     }
 
-    public void Update()
-    {
-        PathFollow();
-    }
+
 
     private void Hide()
     {
